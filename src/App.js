@@ -66,22 +66,99 @@ const seed = [
 ]
 
 class App extends Component {
-  // labelMaker()
+  constructor(props) {
+    super(props)
+    this.state ={messages: seed}
+  }
+
+  handleStar = (id) => {
+    const starChange = this.state.messages.map(message=> message.id === id ? {...message, starred:!message.starred}:{...message})
+    this.setState({messages: starChange})
+  }
+
+  handleChecked = (id, selected) => {
+      const selectClass = this.state.messages.map(message=> message.id === id ? {...message, selected}: {...message})
+      this.setState({messages: selectClass})
+  }
+
+  selectAllStatus = () => {
+    if(this.state.messages.every(message => message.selected)) {
+      return ['fa fa-check-square-o']
+    } else if(this.state.messages.some(message => message.selected)){
+      return ['fa fa-minus-square-o']
+    } else { return ['fa fa-square-o', 'disabled']}
+  }
+
+  handleSelectAll = () => {
+    let statusSet = undefined;
+    if(this.state.messages.every(message => message.selected)) {
+      const selected = false
+      statusSet = this.state.messages.map(message => ({...message, selected}))
+    } else {
+      const selected = true
+      statusSet = this.state.messages.map(message => ({...message, selected}))
+    }
+    this.setState({messages: statusSet})
+}
+
+  handleSelected = (cb, label) => {
+    const updatedMessages = this.state.messages.map(message => message.selected ? cb(message, label) :message)
+    this.setState({messages: updatedMessages})
+  }
+
+  handleRead = (message) => {
+    message.read = false
+    return message
+  }
+
+  handleUnread = (message) => {
+    message.read = true
+    return message
+  }
+
+  handleAddLabels = (message, label ) => {
+    message.labels.push(label)
+    return message
+  }
+
+  handleRemoveLabels = (message, label) => {
+    let index = message.labels.indexOf(label)
+    index > -1 ? (message.labels.splice(index, 1)): message
+    return message
+  }
+
+  handleDelete = (message) => {
+    let filter = this.state.messages.filter(item=> !item.selected)
+    this.setState({messages: filter})
+  }
+
+  unreadCount = () => {
+    let count = 0
+    this.state.messages.map(message => (message.read === false ) ? count++ : null)
+    return count
+  }
+
   render() {
-    const messageList = seed.map(message => <Messages key={ message.id } {...message} />)
+    const messageList = this.state.messages.map(message => <Messages key={ message.id } {...message} handleStar={this.handleStar} handleChecked={this.handleChecked}/>)
     return (
-
-
       <div>
         <div>
-          <Toolbar />
+          <Toolbar
+            handleSelectAll={this.handleSelectAll}
+            selectAllStatus={this.selectAllStatus}
+            handleSelected={this.handleSelected}
+            handleRead={this.handleRead}
+            handleUnread={this.handleUnread}
+            handleAddLabels={this.handleAddLabels}
+            handleRemoveLabels={this.handleRemoveLabels}
+            handleDelete={this.handleDelete}
+            unreadCount={this.unreadCount}
+             />
         </div>
         <div>
           { messageList }
         </div>
       </div>
-
-
     );
   }
 }
