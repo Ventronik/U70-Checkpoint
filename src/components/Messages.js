@@ -15,7 +15,9 @@ const Messages = ({ id, subject, read, starred, labels, handleStar, selected, ha
           <div className="col-xs-2">
             <i
               className={starred ? "star fa fa-star" : "star fa fa-star-o"}
-              onClick={event => handleStar(id)}
+              onClick={event => {
+                handleStar(id);
+              }}
             ></i>
           </div>
         </div>
