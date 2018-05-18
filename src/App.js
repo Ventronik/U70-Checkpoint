@@ -3,6 +3,7 @@ import axios from 'axios';
 
 import Messages from './components/Messages'
 import Toolbar from './components/Toolbar'
+import Compose from './components/Compose'
 
 import './App.css';
 
@@ -10,7 +11,10 @@ import './App.css';
 class App extends Component {
   constructor(props) {
     super(props)
-    this.state ={messages: []}
+    this.state ={
+      messages: [],
+      compose: false
+    }
   }
 
   componentDidMount= () => {
@@ -51,38 +55,59 @@ class App extends Component {
     this.setState({messages: statusSet})
 }
 
-  handleSelected = (cb, label) => {
-    const updatedMessages = this.state.messages.map(message => message.selected ? cb(message, label) :message)
-    this.setState({messages: updatedMessages})
+  handleSelected = (input, command) => {
+    let messageIds = this.state.messages
+                      .filter(message => message.selected)
+                      .map(message => message.id)
+    // axios.patch('http://localhost:8082/api/messages', {messageIds: messageIds, command: command, input})
+    // .then(()=> this.getAllMessages())
   }
 
-  handleRead = (message) => {
-    message.read = false
-    return message
+  handleRead = () => {
+    let messageIds = this.state.messages
+                      .filter(message => message.selected)
+                      .map(message => message.id)
+    axios.patch('http://localhost:8082/api/messages', {messageIds: messageIds, command: 'read', read: false})
+    .then(()=> this.getAllMessages())
   }
 
-  handleUnread = (message) => {
-    message.read = true
-    return message
+  // handler = () => {
+  //   let messageIds = this.state.message
+  //                   .map(message => message.selected)
+  //   axios.patch('http://localhost:8082/api/messages', {messageIds: [messageIds], command: 'read'})
+  //   .then(()=> this.getAllMessages())
+  // }
+
+  handleUnread = () => {
+    let messageIds = this.state.messages
+                      .filter(message => message.selected)
+                      .map(message => message.id)
+    axios.patch('http://localhost:8082/api/messages', {messageIds: messageIds, command: 'read', read: true})
+    .then(()=> this.getAllMessages())
   }
 
-  handleAddLabels = (message, label ) => {
-    let index = message.labels.indexOf(label);
-    if(index === -1) {
-       message.labels.push(label)
-    }
-    return message
+  handleAddLabels = (label ) => {
+    let messageIds = this.state.messages
+                      .filter(message => message.selected)
+                      .map(message => message.id)
+    axios.patch('http://localhost:8082/api/messages', {messageIds: messageIds, command: 'addLabel', label: label})
+    .then(()=> this.getAllMessages())
   }
 
-  handleRemoveLabels = (message, label) => {
-    let index = message.labels.indexOf(label)
-    index > -1 ? (message.labels.splice(index, 1)): message
-    return message
+  handleRemoveLabels = (label) => {
+    let messageIds = this.state.messages
+                      .filter(message => message.selected)
+                      .map(message => message.id)
+    axios.patch('http://localhost:8082/api/messages', {messageIds: messageIds, command: 'removeLabel', label: label})
+    .then(()=> this.getAllMessages())
   }
 
   handleDelete = (message) => {
-    let filter = this.state.messages.filter(item=> !item.selected)
-    this.setState({messages: filter})
+    let messageIds = this.state.messages
+                      .filter(message => message.selected)
+                      .map(message => message.id)
+    axios.patch('http://localhost:8082/api/messages', {messageIds: messageIds, command: 'delete'})
+    .then(()=> this.getAllMessages())
   }
 
   unreadCount = () => {
@@ -91,12 +116,22 @@ class App extends Component {
     return count
   }
 
-
-   getAllMessages = async() => {
-    await axios.get('http://localhost:8082/api/messages')
+   getAllMessages = () => {
+    axios.get('http://localhost:8082/api/messages')
     .then(allMessages=> {
       this.setState({messages: allMessages.data})
     })
+  }
+
+  handleCompose= () => {
+     let compose = !this.state.compose
+     this.setState({...this.state, compose})
+  }
+
+  handleSubmit = (event) => {
+    axios.post('http://localhost:8082/api/messages', {subject: event.target.subject.value, body: event.target.body.value})
+    .then(()=> this.getAllMessages())
+    // this.setState({...this.state})
   }
 
   render() {
@@ -114,7 +149,13 @@ class App extends Component {
             handleRemoveLabels={this.handleRemoveLabels}
             handleDelete={this.handleDelete}
             unreadCount={this.unreadCount}
+            handleCompose={this.handleCompose}
              />
+        </div>
+        <div>
+          {this.state.compose ?
+          <Compose handleSubmit={this.handleSubmit} />: null
+          }
         </div>
         <div>
           { messageList }
